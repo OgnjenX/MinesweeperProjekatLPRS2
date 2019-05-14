@@ -43,7 +43,7 @@
 #include "minesweeper_sprites.h"
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>
-#define SIZE 9
+#define SIZE 100
 #define UP 0b01000000
 #define DOWN 0b00000100
 #define LEFT 0b00100000
@@ -51,16 +51,9 @@
 #define CENTER 0b00010000
 #define SW0 0b00000001
 #define SW1 0b00000010
-#define BOMB '*'
-#define NUM1 '1'
-#define NUM2 '2'
-#define NUM3 '3'
-#define NUM4 '4'
+#define PLAYER_TRACE '1'
+#define BOTS_TRACE '2'
 #define BLANK '0'
-#define FLAG '#'
-#define NUMOFMINES 9
-//BEG---unpened field
-#define BEG '@'
 
 int endOfGame;
 int inc1;
@@ -71,13 +64,10 @@ int flagTrue;
 int randomCounter = 50;
 int numOfMines;
 int firstTimeCenter;
-//map that is hidden from the user-it contains the solution
-char solvedMap[9][9];
-//map that has all of player's moves
-char blankMap[9][9];
-//map used for opening the blank fields that surround blank field selected
-char indicationMap[9][9];
 
+char blankMap[160][120];
+
+/*
 //end of game
 void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) {
 	int i, j, ii, jj;
@@ -186,6 +176,10 @@ void openField(int x, int y, char map[9][9]) {
 	}
 }
 
+
+
+
+
 //function that generates random game map
 void makeTable(char temp[9][9]) {
 	int numOfMines = NUMOFMINES, row, column, i, j, m, surroundingMines = 0;
@@ -281,7 +275,13 @@ void makeTable(char temp[9][9]) {
 
 }
 
+
+
 //extracting pixel data from a picture for printing out on the display
+
+
+
+
 
 void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 	int ox, oy, oi, iy, ix, ii;
@@ -310,6 +310,8 @@ void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 	}
 
 }
+
+
 
 //drawing cursor for indicating position
 void drawingCursor(int startX, int startY, int endX, int endY) {
@@ -354,8 +356,12 @@ void drawingCursor(int startX, int startY, int endX, int endY) {
 
 //function that controls switches and buttons
 
+
+
+
+
 void move() {
-	int startX = 81, startY = 81, endX = 96, endY = 96;
+	int startX = 145, startY = 201, endX = 96, endY = 96;
 	int oldStartX, oldStartY, oldEndX, oldEndY;
 	int x, y, ic, ib, i, j;
 	int prethodnoStanje;
@@ -583,32 +589,18 @@ void move() {
 	}
 
 }
+*/
 
 int main() {
 
 	int j, p, r;
 	inc1 = 0;
 	inc2 = 0;
-	numOfFlags = NUMOFMINES;
 	flagTrue = 0;
-	numOfMines = NUMOFMINES;
 	firstTimeCenter = 0;
 
 	init_platform();
 
-	//helping map for cleaning the table when blank button is pressed
-	for (p = 0; p < SIZE; p++) {
-		for (r = 0; r < SIZE; r++) {
-			indicationMap[p][r] = BLANK;
-		}
-	}
-
-	//map which contains all the moves of the player
-	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 9; j++) {
-			blankMap[i][j] = BEG;
-		}
-	}
 
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x00, 0x0); // direct mode   0
@@ -619,9 +611,9 @@ int main() {
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x0C, 0xff); // font size       3
 	VGA_PERIPH_MEM_mWriteMemory(
-			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x10, 0xFFFFFF); // foreground 4
+			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x10, 0x00FF00); // foreground 4
 	VGA_PERIPH_MEM_mWriteMemory(
-			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x0000FF); // background color 5
+			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x00FF00); // background color 5
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x18, 0xFF0000); // frame color      6
 	VGA_PERIPH_MEM_mWriteMemory(
@@ -633,30 +625,79 @@ int main() {
 			i = y * 320 + x;
 			VGA_PERIPH_MEM_mWriteMemory(
 					XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
-							+ i * 4, 0x000000);
+							+ i * 4, 0x00FF00);
 		}
 	}
 
-	//drawing a map
-	for (kolona = 0; kolona < 9; kolona++) {
-		for (red = 0; red < 9; red++) {
-			drawMap(80, 16, 80 + red * 16, 80 + kolona * 16, 16, 16);
-		}
-	}
-
-	//smiley
-	drawMap(0, 55, 120, 54, 27, 26);
-
-	//flag
-	drawMap(65, 17, 154, 60, 13, 13);
-
-	//counter
-	drawMap(116, 32, 168, 54, 14, 23);
-
-	//moving through the table
-	move();
 
 	cleanup_platform();
 
 	return 0;
 }
+
+ void initTable(char table[160][120]) {
+	 for(int i=0; i<160; i++) {
+		 for(int j=0; j<120;j++) {
+			 table[i][j] = BLANK;
+		 }
+	 }
+  }
+
+void move_player(btn_state_t prev_btn_state){
+
+	/*
+	 *  DOWN - 1
+	 *  UP - 2
+	 *  LEFT - 3
+	 *  RIGHT - 4
+*/
+
+
+	initTable(blankMap);
+
+	int startXP=,startYP=,endXP=,endYP=;
+	int rowP, columnP;
+	int trace;
+    int Prethodno_stanje = 2;
+	typedef enum{
+		NOTHING_PRESSED,SOMETHING_PRESSED
+	}btn_state_t;
+	btn_state_t btn_state = NOTHING_PRESSED;
+	if (btn_state == NOTHING_PRESSED) {
+				btn_state = SOMETHING_PRESSED;
+				if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
+					if(Prethodno_stanje != 2) {
+						startYP += 4;
+						endYP +=4;
+						Prethodno_stanje = 1;
+					}
+				}
+
+				else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
+					if(Prethodno_stanje != 3) {
+						startXP += 4;
+						endXP +=4;
+						Prethodno_stanje = 4;
+					}
+
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
+					if(Prethodno_stanje != 4) {
+						startXP -= 4;
+						endXP -=4;
+						Prethodno_stanje = 3;
+					}
+
+
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
+					if(Prethodno_stanje != 1) {
+						startYP -= 4;
+						endYP -=4;
+						Prethodno_stanje = 2;
+					}
+
+				}
+
+}
+
+}
+
