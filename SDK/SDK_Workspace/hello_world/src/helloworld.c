@@ -67,7 +67,6 @@ int firstTimeCenter;
 
 char blankMap[160][120];
 
-/*
 //end of game
 void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) {
 	int i, j, ii, jj;
@@ -589,11 +588,9 @@ void move() {
 	}
 
 }
-*/
 
 int main() {
 
-	int j, p, r;
 	inc1 = 0;
 	inc2 = 0;
 	flagTrue = 0;
@@ -635,13 +632,43 @@ int main() {
 	return 0;
 }
 
- void initTable(char table[160][120]) {
+ /*void initTable() {
 	 for(int i=0; i<160; i++) {
 		 for(int j=0; j<120;j++) {
 			 table[i][j] = BLANK;
 		 }
 	 }
-  }
+  } */
+
+ void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height) {
+ 	int ox, oy, oi, iy, ix, ii;
+ 	for (y = 0; y < height; y++) {
+ 		for (x = 0; x < width; x++) {
+ 			ox = out_x + x;
+ 			oy = out_y + y;
+ 			oi = oy * 320 + ox;
+ 			ix = in_x + x;
+ 			iy = in_y + y;
+ 			ii = iy * minesweeper_sprites.width + ix;
+ 			R = minesweeper_sprites.pixel_data[ii
+ 					* minesweeper_sprites.bytes_per_pixel] >> 5;
+ 			G = minesweeper_sprites.pixel_data[ii
+ 					* minesweeper_sprites.bytes_per_pixel + 1] >> 5;
+ 			B = minesweeper_sprites.pixel_data[ii
+ 					* minesweeper_sprites.bytes_per_pixel + 2] >> 5;
+ 			R <<= 6;
+ 			G <<= 3;
+ 			RGB = R | G | B;
+
+ 			VGA_PERIPH_MEM_mWriteMemory(
+ 					XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
+ 							+ oi * 4, RGB);
+ 		}
+ 	}
+
+ }
+
+
 
 void move_player(btn_state_t prev_btn_state){
 
@@ -655,7 +682,7 @@ void move_player(btn_state_t prev_btn_state){
 
 	initTable(blankMap);
 
-	int startXP=,startYP=,endXP=,endYP=;
+	int startXP=80,startYP=100,endXP=72,endYP=92;
 	int rowP, columnP;
 	int trace;
     int Prethodno_stanje = 2;
