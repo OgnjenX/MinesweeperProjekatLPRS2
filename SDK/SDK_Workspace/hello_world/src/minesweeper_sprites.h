@@ -18,7 +18,7 @@ static const struct {
   unsigned int 	 height;
   unsigned int 	 bytes_per_pixel; /* 2:RGB16, 3:RGB, 4:RGBA */
   unsigned char	pixel_data[24 * 8 * 3 + 1];
-} gimp_image = {
+} minesweeper_sprites = {
   24, 8, 3,
   "\313\313d\361\361u\352\352m\352\352m\352\352b\360\360k\360\360g\362\362\221"
   "\231\231\345__\334XX\333,,\272//\312<<\313DD\313{{\305\370\362\364\371\356"
