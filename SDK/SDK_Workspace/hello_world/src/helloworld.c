@@ -68,17 +68,18 @@ int firstTimeCenter;
 
 char blankMap[80][60];
 
-typedef enum JOY {
-	JOY_UP,
-	JOY_LEFT,
-	JOY_RIGHT,
-	JOY_DOWN,
-	JOY_SELECT,
-	JOY_NONE,
-	JOY_UNKNOWN
-} JOY;
+typedef enum {
+		LEVO,
+		DESNO,
+		GORE,
+		DOLE
+	}PRAVAC;
 
- /*
+PRAVAC movePlayer(int* proslo_stanje);
+
+/*
+
+
 //end of game
 void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) {
 	int i, j, ii, jj;
@@ -601,19 +602,6 @@ void move() {
 
 } */
 
-JOY GetJOY() {
-
-	if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) { return JOY_DOWN;
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {return JOY_RIGHT;
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) { return JOY_LEFT;
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) { return JOY_UP;
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & CENTER)== 0) {
-					return JOY_SELECT;
-				} else {
-					return JOY_NONE;
-				}
-
-}
 
 
 int main() {
@@ -637,7 +625,7 @@ int main() {
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x10, 0x00FF00); // foreground 4
 	VGA_PERIPH_MEM_mWriteMemory(
-			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x00FF00); // background color 5
+			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x000000); // background color 5
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x18, 0xFF0000); // frame color      6
 	VGA_PERIPH_MEM_mWriteMemory(
@@ -671,8 +659,7 @@ int main() {
 		}
 
 
-	moveBot();
-
+	movePlayerAndBot();
 
 	cleanup_platform();
 
@@ -730,228 +717,134 @@ void clean(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 
 			VGA_PERIPH_MEM_mWriteMemory(
 					XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
-							+ oi * 4, 0xFFFFFF);
+							+ oi * 4, 0x0000FF);
 		}
 	}
 
 }
 
+void movePlayerAndBot() {
+	int rowP=20, columnP=27;
+	int rowB=20, columnB=3;
+	int proslo_stanje = 4;
+	int brojac = 0;
+	int j = 0;
+	PRAVAC p;
 
 
-void moveBot() {
+	while(1){
+		while(j<1000000) {j++;}
+		j=0;
+		//moveBot(&rowB,&columnB);
+		p = movePlayer(&proslo_stanje);
+			switch(p){
+				case DOLE:
+					columnP++;
+					drawMap(8,0,rowP*8,columnP*8,8,8);
+					clean(8,0,rowP*8,(columnP-1)*8,8,8);
+					break;
+				case GORE:
+					columnP--;
+					drawMap(8,0,rowP*8,columnP*8,8,8);
+					clean(8,0,rowP*8,(columnP+1)*8,8,8);
+					break;
+				case LEVO:
+					rowP--;
+					drawMap(8,0,rowP*8,columnP*8,8,8);
+					clean(8,0,(rowP+1)*8,columnP*8,8,8);
+					break;
+				case DESNO:
+					rowP++;
+					drawMap(8,0,rowP*8,columnP*8,8,8);
+					clean(8,0,(rowP-1)*8,columnP*8,8,8);
+					break;
+
+		}
+
+
+	}
+}
+
+void moveBot(int *rowB,int *columnB ) {
+	int smer = rand()%4;
+	int row = &rowB;
+	int column = &columnB;
+	if(smer == 0) {
+		row++;
+	} else if(smer == 1) {
+		row--;
+	} else if(smer == 2) {
+		column++;
+	} else {
+		column--;
+	}
+}
+
+PRAVAC movePlayer(int* proslo_stanje) {
 
 	/*
-	 *  DOWN - 1
-	 *  UP - 2
-	 *  LEFT - 3
-	 *  RIGHT - 4
+	 * RIGHT - 1
+	 * LEFT - 2
+	 * DOWN - 3
+	 * UP - 4
 	 */
-	int brojac=0;
-	int row=20,column=3;
-	int tc=0, tr=0, j=0;
-	int prethodno_stanje=1;
-	int rowP=20,columnP=27;
-	while (brojac<100) {
-			i = rand() % 4;
-			r=rand()%10;
-			c=rand()%10;
+	int trenutno_stanje;
+	int p = *proslo_stanje;
+	int j = 0;
+
+	PRAVAC pravac;
 
 
-
-
-			if(i==0 && prethodno_stanje != 3) {
-				while(tr<r){
-				row++;
-				tr++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				clean(0,0  , (row-1) * 8,  column * 8, 8, 8);
-				while(j<1000000) {j++;}
-				j=0;
-				}
-				tr=0;
-				prethodno_stanje = 4;
-
-
-			} else if(i==1 && prethodno_stanje != 2) {
-				while(tc<c){
-				column++;
-				tc++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				clean(0,0  , row * 8,  (column-1) * 8, 8, 8);
-				while(j<1000000) {j++;}
-				j=0;
-				}
-				tc=0;
-				prethodno_stanje = 1;
-				movePlayer();
-			} else if(i==2 && prethodno_stanje != 1) {
-				while(tc<c){
-				column--;
-				tc++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				clean(0,0  , row * 8,  (column+1) * 8, 8, 8);
-				while(j<1000000) {j++;}
-				j=0;
-				}
-				tc=0;
-				prethodno_stanje = 2;
-				movePlayer();
-			} else if(prethodno_stanje != 4)  {
-				while(tr<r){
-				row--;
-				tr++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				clean(0,0  , (row+1) * 8,  column * 8, 8, 8);
-				while(j<1000000) {j++;}
-				j=0;
-				}
-
-				tr=0;
-				prethodno_stanje = 3;
-				movePlayer();
-
-	}
-			brojac++;
-
-}
-}
-
-
-void movePlayer() {
-	typedef enum{
-		NOTHING_PRESSED, SOMETHING_PRESSED
-	}btn_state;
-	btn_state btn = NOTHING_PRESSED;
-	int p=0, t=0;
-	int rowP=20,columnP=27;
-	JOY joy;
-	joy = GetJOY();
-	if(btn == SOMETHING_PRESSED){
-		switch(joy){
-		case JOY_RIGHT:
-			btn = NOTHING_PRESSED;
-			while(btn == NOTHING_PRESSED)
-			{
-				rowP++;
+		/*while(joy == JOY_NONE) {
+				columnP--;
 				drawMap(8,0  , rowP * 8,  columnP * 8, 8, 8);
-				clean(8,0  , (rowP-1) * 8,  columnP * 8, 8, 8);
+				clean(8,0  , rowP * 8,  (columnP+1) * 8, 8, 8);
+			} */
+
+		if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
+				trenutno_stanje = 1;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
+				trenutno_stanje = 2;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
+				trenutno_stanje = 3;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
+				trenutno_stanje = 4;
 			}
-		default:
-			columnP--;
-			drawMap(8,0  , rowP * 8,  columnP * 8, 8, 8);
-			clean(8,0  , rowP * 8,  (columnP+1) * 8, 8, 8);
-		}
-	}
-
-}
-
-
-void move() {
-
-	int startX=160, startY=216,endX=168,endY=224;
-	int oldStartX, oldStartY, oldEndX, oldEndY;
-		int x, y, ic, ib, i, j;
-		int prethodnoStanje;
-		typedef enum {
-			NOTHING_PRESSED, SOMETHING_PRESSED
-		} btn_state_t;
-		btn_state_t btn_state = NOTHING_PRESSED;
-
-		if(btn_state == NOTHING_PRESSED) {
-			btn_state = SOMETHING_PRESSED;
-			if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-							if (endY < 224) {
-								oldStartY = startY;
-								oldEndY = endY;
-								startY += 8;
-								endY += 8;
-
-							}
-
-						}
-		} else { // SOMETHING_PRESSED
-			if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & CENTER)
-					== 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & SW0) != 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & SW1) != 0) {
-			} else {
-				btn_state = NOTHING_PRESSED;
+		if(trenutno_stanje == p){
+			switch(p) {
+			case 1:
+				return DESNO;
+			case 2:
+				return LEVO;
+			case 3:
+				return DOLE;
+			case 4:
+				return GORE;
 			}
+		} else{
+			if(p != 2 && trenutno_stanje == 1) {
+						pravac = DESNO;
+						p= 1;
+					} else if(p != 1 && trenutno_stanje == 2) {
+						pravac = LEVO;
+						p= 2;
+
+					} else if(trenutno_stanje == 3 && p != 4) {
+						pravac = DOLE;
+						p = 3;
+
+					} else if(trenutno_stanje == 4 && p != 3) {
+						pravac = GORE;
+						p = 4;
+					}
+
+		return pravac;
 		}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*void move_player(btn_state_t prev_btn_state){
-
-
-	 *  DOWN - 1
-	 *  UP - 2
-	 *  LEFT - 3
-	 *  RIGHT - 4
-
-
-
-	initTable(blankMap);
-
-	int startXP=80,startYP=100,endXP=72,endYP=92;
-	int rowP, columnP;
-	int trace;
-    int Prethodno_stanje = 2;
-	typedef enum{
-		NOTHING_PRESSED,SOMETHING_PRESSED
-	}btn_state_t;
-	btn_state_t btn_state = NOTHING_PRESSED;
-	if (btn_state == NOTHING_PRESSED) {
-				btn_state = SOMETHING_PRESSED;
-				if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
-					if(Prethodno_stanje != 2) {
-						startYP += 4;
-						endYP +=4;
-						Prethodno_stanje = 1;
-					}
-				}
-
-				else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-					if(Prethodno_stanje != 3) {
-						startXP += 4;
-						endXP +=4;
-						Prethodno_stanje = 4;
-					}
-
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
-					if(Prethodno_stanje != 4) {
-						startXP -= 4;
-						endXP -=4;
-						Prethodno_stanje = 3;
-					}
-
-
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
-					if(Prethodno_stanje != 1) {
-						startYP -= 4;
-						endYP -=4;
-						Prethodno_stanje = 2;
-					}
-
-				}
 
 }
 
-} */
+
 

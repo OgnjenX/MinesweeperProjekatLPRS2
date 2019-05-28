@@ -1,5 +1,5 @@
-/*
- * minesweeper_sprites.h
+
+ /** minesweeper_sprites.h
  *
  *  Created on: 16.05.2016.
  *      Author: student
