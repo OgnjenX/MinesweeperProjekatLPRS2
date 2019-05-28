@@ -67,6 +67,17 @@ int numOfMines;
 int firstTimeCenter;
 
 char blankMap[80][60];
+
+typedef enum JOY {
+	JOY_UP,
+	JOY_LEFT,
+	JOY_RIGHT,
+	JOY_DOWN,
+	JOY_SELECT,
+	JOY_NONE,
+	JOY_UNKNOWN
+} JOY;
+
  /*
 //end of game
 void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) {
@@ -590,6 +601,21 @@ void move() {
 
 } */
 
+JOY GetJOY() {
+
+	if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) { return JOY_DOWN;
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {return JOY_RIGHT;
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) { return JOY_LEFT;
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) { return JOY_UP;
+				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & CENTER)== 0) {
+					return JOY_SELECT;
+				} else {
+					return JOY_NONE;
+				}
+
+}
+
+
 int main() {
 
 	inc1 = 0;
@@ -643,7 +669,6 @@ int main() {
 					}
 				}
 		}
-
 
 
 	moveBot();
@@ -714,51 +739,111 @@ void clean(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 
 
 void moveBot() {
+
+	/*
+	 *  DOWN - 1
+	 *  UP - 2
+	 *  LEFT - 3
+	 *  RIGHT - 4
+	 */
 	int brojac=0;
 	int row=20,column=3;
-	int tc=0, tr=0;
-	while (brojac<5) {
+	int tc=0, tr=0, j=0;
+	int prethodno_stanje=1;
+	int rowP=20,columnP=27;
+	while (brojac<100) {
 			i = rand() % 4;
 			r=rand()%10;
 			c=rand()%10;
 
 
-			if(i==0) {
+
+
+			if(i==0 && prethodno_stanje != 3) {
 				while(tr<r){
 				row++;
 				tr++;
 				drawMap(0,0  , row * 8,  column * 8, 8, 8);
+				clean(0,0  , (row-1) * 8,  column * 8, 8, 8);
+				while(j<1000000) {j++;}
+				j=0;
 				}
 				tr=0;
+				prethodno_stanje = 4;
 
-			} else if(i==1) {
+
+			} else if(i==1 && prethodno_stanje != 2) {
 				while(tc<c){
 				column++;
 				tc++;
 				drawMap(0,0  , row * 8,  column * 8, 8, 8);
+				clean(0,0  , row * 8,  (column-1) * 8, 8, 8);
+				while(j<1000000) {j++;}
+				j=0;
 				}
 				tc=0;
-			} else if(i==2) {
+				prethodno_stanje = 1;
+				movePlayer();
+			} else if(i==2 && prethodno_stanje != 1) {
 				while(tc<c){
 				column--;
 				tc++;
 				drawMap(0,0  , row * 8,  column * 8, 8, 8);
+				clean(0,0  , row * 8,  (column+1) * 8, 8, 8);
+				while(j<1000000) {j++;}
+				j=0;
 				}
 				tc=0;
-			} else  {
+				prethodno_stanje = 2;
+				movePlayer();
+			} else if(prethodno_stanje != 4)  {
 				while(tr<r){
 				row--;
 				tr++;
 				drawMap(0,0  , row * 8,  column * 8, 8, 8);
+				clean(0,0  , (row+1) * 8,  column * 8, 8, 8);
+				while(j<1000000) {j++;}
+				j=0;
 				}
 
 				tr=0;
+				prethodno_stanje = 3;
+				movePlayer();
+
 	}
 			brojac++;
 
 }
 }
 
+
+void movePlayer() {
+	typedef enum{
+		NOTHING_PRESSED, SOMETHING_PRESSED
+	}btn_state;
+	btn_state btn = NOTHING_PRESSED;
+	int p=0, t=0;
+	int rowP=20,columnP=27;
+	JOY joy;
+	joy = GetJOY();
+	if(btn == SOMETHING_PRESSED){
+		switch(joy){
+		case JOY_RIGHT:
+			btn = NOTHING_PRESSED;
+			while(btn == NOTHING_PRESSED)
+			{
+				rowP++;
+				drawMap(8,0  , rowP * 8,  columnP * 8, 8, 8);
+				clean(8,0  , (rowP-1) * 8,  columnP * 8, 8, 8);
+			}
+		default:
+			columnP--;
+			drawMap(8,0  , rowP * 8,  columnP * 8, 8, 8);
+			clean(8,0  , rowP * 8,  (columnP+1) * 8, 8, 8);
+		}
+	}
+
+}
 
 
 void move() {
@@ -798,6 +883,8 @@ void move() {
 			}
 		}
 }
+
+
 
 
 
