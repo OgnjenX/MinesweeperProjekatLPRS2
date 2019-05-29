@@ -51,23 +51,33 @@
 #define CENTER 0b00010000
 #define SW0 0b00000001
 #define SW1 0b00000010
-#define PLAYER_TRACE '1'
-#define BOTS_TRACE '2'
 #define BLANK '0'
-#define PLAYER '*'
+#define PLAYER '1'
+#define BOT '2'
+#define PLAYER_TRACE '3'
+#define BOTS_TRACE '4'
 
 int endOfGame;
 int inc1;
 int inc2;
 int i, x, y, ii, oi, R, G, B, RGB, kolona, red, RGBgray,r,c;
-int numOfFlags;
-int flagTrue;
-int randomCounter = 50;
-int numOfMines;
-int firstTimeCenter;
 
-char blankMap[80][60];
- /*
+
+char BlankMap[40][30];
+
+typedef enum {
+		LEVO,
+		DESNO,
+		GORE,
+		DOLE
+	}PRAVAC;
+
+PRAVAC movePlayer(int* proslo_stanje,int *trenutno_stanje);
+PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje );
+
+/*
+
+
 //end of game
 void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) {
 	int i, j, ii, jj;
@@ -88,7 +98,7 @@ void printOutEndOfGame(char blankTable[SIZE][SIZE], char solvedMap[SIZE][SIZE]) 
 
 //when the blank field is pressed, open all blank fields around it
 
-void clean(int x, int y, char resultTable[SIZE][SIZE],
+void traceP(int x, int y, char resultTable[SIZE][SIZE],
 		char indicationMap[SIZE][SIZE]) {
 	int i, j;
 
@@ -99,7 +109,7 @@ void clean(int x, int y, char resultTable[SIZE][SIZE],
 			for (j = y - 1; j <= y + 1; j++) {
 				if (i >= 0 && j >= 0 && i < 9 && j < 9 && !(x == i && y == j)) {
 					if (indicationMap[i][j] == BLANK) {
-						clean(i, j, resultTable, indicationMap);
+						traceP(i, j, resultTable, indicationMap);
 					}
 				}
 
@@ -139,7 +149,7 @@ void openField(int x, int y, char map[9][9]) {
 		drawMap(0, 0, x - 1, y - 1, 16, 16);
 		if (map != blankMap)
 			blankMap[x1][y1] = BLANK;
-		clean(x1, y1, solvedMap, indicationMap);
+		traceP(x1, y1, solvedMap, indicationMap);
 		for (i = 0; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				xil_printf("%c", indicationMap[i][j]);
@@ -590,12 +600,13 @@ void move() {
 
 } */
 
+
+
 int main() {
 
 	inc1 = 0;
 	inc2 = 0;
-	flagTrue = 0;
-	firstTimeCenter = 0;
+
 
 	init_platform();
 
@@ -611,7 +622,7 @@ int main() {
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x10, 0x00FF00); // foreground 4
 	VGA_PERIPH_MEM_mWriteMemory(
-			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x00FF00); // background color 5
+			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x14, 0x000000); // background color 5
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x18, 0xFF0000); // frame color      6
 	VGA_PERIPH_MEM_mWriteMemory(
@@ -627,31 +638,55 @@ int main() {
 		}
 	}
 
+	for (x = 0; x < 320; x++) {
+			for (y = 0; y < 240; y++) {
+				if(x==0 || x==319 || y==0 || y==239 )
+				i = y * 320 + x;
+				VGA_PERIPH_MEM_mWriteMemory(
+						XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
+								+ i * 4, 0xFFFFFF);
+			}
+		}
 
-	for (kolona = 0; kolona < 31; kolona++) {
-			for (red = 0; red < 41; red++) {
-				if(kolona == 27 && red == 20 ) {
+
+
+	for (kolona = 0; kolona < 40; kolona++) {
+			for (red = 0; red < 30; red++) {
+				if(kolona == 20 && red == 27 ) {
 				drawMap(8,0  , red * 8,  kolona * 8, 8, 8);
 				}
 			}
 	}
 
-	for (kolona = 0; kolona < 31; kolona++) {
-				for (red = 0; red < 41; red++) {
-					if(kolona == 3 && red == 20 ) {
+	for (kolona = 0; kolona < 40; kolona++) {
+				for (red = 0; red < 30; red++) {
+					if(kolona == 20 && red == 3 ) {
 					drawMap(0,0  , red * 8,  kolona * 8, 8, 8);
 					}
 				}
 		}
 
-
-
-	moveBot();
-
+	movePlayerAndBot();
 
 	cleanup_platform();
 
 	return 0;
+}
+
+void makeTable(char temp [40][30]) {
+	int i,j;
+	char table[40][30];
+
+	//popunjava matricu nulama
+	for (i = 0; i < 40; i++) {
+		for (j = 0; j < 30; j++) {
+			table[i][j] = BLANK;
+		}
+	}
+
+	table[20][27] = PLAYER;
+	table[20][3]=BOT;
+
 }
 
 //crtanje spritova
@@ -683,188 +718,240 @@ void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 
 }
 
-void clean(int in_x, int in_y, int out_x, int out_y, int width, int height) {
+void traceP(int in_x, int in_y, int out_x, int out_y, int width, int height) {
 	int ox, oy, oi, iy, ix, ii;
 	for (y = 0; y < height; y++) {
 		for (x = 0; x < width; x++) {
 			ox = out_x + x;
 			oy = out_y + y;
 			oi = oy * 320 + ox;
-			ix = in_x + x;
-			iy = in_y + y;
-			ii = iy * minesweeper_sprites.width + ix;
-			R = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel] >> 5;
-			G = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel + 1] >> 5;
-			B = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel + 2] >> 5;
-			R <<= 6;
-			G <<= 3;
-			RGB = R | G | B;
+
 
 			VGA_PERIPH_MEM_mWriteMemory(
 					XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
-							+ oi * 4, 0xFFFFFF);
+							+ oi * 4, 0x0000FF);
 		}
 	}
 
 }
 
+void traceB(int in_x, int in_y, int out_x, int out_y, int width, int height) {
+	int ox, oy, oi, iy, ix, ii;
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+			ox = out_x + x;
+			oy = out_y + y;
+			oi = oy * 320 + ox;
 
 
-void moveBot() {
-	int brojac=0;
-	int row=20,column=3;
-	int tc=0, tr=0;
-	while (brojac<5) {
-			i = rand() % 4;
-			r=rand()%10;
-			c=rand()%10;
-
-
-			if(i==0) {
-				while(tr<r){
-				row++;
-				tr++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				}
-				tr=0;
-
-			} else if(i==1) {
-				while(tc<c){
-				column++;
-				tc++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				}
-				tc=0;
-			} else if(i==2) {
-				while(tc<c){
-				column--;
-				tc++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				}
-				tc=0;
-			} else  {
-				while(tr<r){
-				row--;
-				tr++;
-				drawMap(0,0  , row * 8,  column * 8, 8, 8);
-				}
-
-				tr=0;
+			VGA_PERIPH_MEM_mWriteMemory(
+					XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + GRAPHICS_MEM_OFF
+							+ oi * 4, 0x00FF00);
+		}
 	}
-			brojac++;
 
 }
-}
+
+void movePlayerAndBot(char table[40][30]) {
+	int rowP=20, columnP=27;
+	int rowB=20, columnB=3;
+	int proslo_stanje = 4;
+	int trenutno_stanje = 4;
+	int proslo_stanje_b = 3;
+	int trenutno_stanje_b = 3;
+	int brojac = 0;
+	int j = 0;
+	int s= 0;
+	int row,column;
+	PRAVAC p;
+	PRAVAC b;
+
+	makeTable(BlankMap);
 
 
+	while(1){
+		while(j<1000000) {
+			if(j==1000){
+				b = moveBot(&proslo_stanje_b, &trenutno_stanje_b);
+			}
+			j++;
+			}
+		j=0;
 
-void move() {
 
-	int startX=160, startY=216,endX=168,endY=224;
-	int oldStartX, oldStartY, oldEndX, oldEndY;
-		int x, y, ic, ib, i, j;
-		int prethodnoStanje;
-		typedef enum {
-			NOTHING_PRESSED, SOMETHING_PRESSED
-		} btn_state_t;
-		btn_state_t btn_state = NOTHING_PRESSED;
+		switch(b){
+			case DOLE:
+				columnB++;
+				drawMap(0,0,rowB*8,columnB*8,8,8);
+				traceB(0,0,rowB*8,(columnB-1)*8,8,8);
+				break;
+			case GORE:
+				columnB--;
+				drawMap(0,0,rowB*8,columnB*8,8,8);
+				traceB(0,0,rowB*8,(columnB+1)*8,8,8);
+				break;
+			case LEVO:
+				rowB--;
+				drawMap(0,0,rowB*8,columnB*8,8,8);
+				traceB(0,0,(rowB+1)*8,columnB*8,8,8);
+				break;
+			case DESNO:
+				rowB++;
+				drawMap(0,0,rowB*8,columnB*8,8,8);
+				traceB(0,0,(rowB-1)*8,columnB*8,8,8);
+				break;
+				}
 
-		if(btn_state == NOTHING_PRESSED) {
-			btn_state = SOMETHING_PRESSED;
-			if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-							if (endY < 224) {
-								oldStartY = startY;
-								oldEndY = endY;
-								startY += 8;
-								endY += 8;
+		BlankMap[columnB][rowB] = BOT;
 
-							}
+			p = movePlayer(&proslo_stanje,&trenutno_stanje);
+		switch(p){
+			case DOLE:
+				columnP++;
+				drawMap(8,0,rowP*8,columnP*8,8,8);
+				traceP(8,0,rowP*8,(columnP-1)*8,8,8);
+				break;
+			case GORE:
+				columnP--;
+				drawMap(8,0,rowP*8,columnP*8,8,8);
+				traceP(8,0,rowP*8,(columnP+1)*8,8,8);
+				break;
+			case LEVO:
+				rowP--;
+				drawMap(8,0,rowP*8,columnP*8,8,8);
+				traceP(8,0,(rowP+1)*8,columnP*8,8,8);
+				break;
+			case DESNO:
+				rowP++;
+				drawMap(8,0,rowP*8,columnP*8,8,8);
+				traceP(8,0,(rowP-1)*8,columnP*8,8,8);
+				break;
 
-						}
-		} else { // SOMETHING_PRESSED
-			if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & CENTER)
-					== 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & SW0) != 0) {
-			} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & SW1) != 0) {
-			} else {
-				btn_state = NOTHING_PRESSED;
+	}
+		BlankMap[columnP][rowP] = PLAYER;
+
+
+	for(row = 0; row < 30; row++) {
+		for(column=0; column < 40; column++) {
+			if(BlankMap[column][row] == PLAYER) {
+				if(row != rowP || column !=columnP) {
+					BlankMap[column][row] = PLAYER_TRACE;
+				}
+			}
+			if(BlankMap[column][row] == BOT) {
+				if(row != rowB || column !=columnB) {
+					BlankMap[column][row] = BOTS_TRACE;
+				}
 			}
 		}
+	}
+
+
+}
 }
 
+PRAVAC moveBot( int* proslo_stanje,int *trenutno_stanje) {
+
+	int *t = trenutno_stanje;
+	int *p = proslo_stanje;
+
+	PRAVAC pravac;
+	 *t = rand()%4;
 
 
+	if(*t == *p){
+		switch(*p) {
+			case 1:
+				return DESNO;
+			case 2:
+				return LEVO;
+			case 3:
+				return DOLE;
+			case 4:
+				return GORE;
+			}
+		} else{
+			if(*p != 2 && *t == 1) {
+				pravac = DESNO;
+				*p= 1;
+			} else if(*p != 1 && *t == 2) {
+				pravac = LEVO;
+				*p= 2;
 
+			} else if(*t == 3 && *p != 4) {
+				pravac = DOLE;
+				*p = 3;
 
+			} else if(*t == 4 && *p != 3) {
+				pravac = GORE;
+				*p = 4;
+			}
+		}
+	return pravac;
 
-
-
-
-
-
-
-/*void move_player(btn_state_t prev_btn_state){
-
-
-	 *  DOWN - 1
-	 *  UP - 2
-	 *  LEFT - 3
-	 *  RIGHT - 4
-
-
-
-	initTable(blankMap);
-
-	int startXP=80,startYP=100,endXP=72,endYP=92;
-	int rowP, columnP;
-	int trace;
-    int Prethodno_stanje = 2;
-	typedef enum{
-		NOTHING_PRESSED,SOMETHING_PRESSED
-	}btn_state_t;
-	btn_state_t btn_state = NOTHING_PRESSED;
-	if (btn_state == NOTHING_PRESSED) {
-				btn_state = SOMETHING_PRESSED;
-				if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
-					if(Prethodno_stanje != 2) {
-						startYP += 4;
-						endYP +=4;
-						Prethodno_stanje = 1;
-					}
-				}
-
-				else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
-					if(Prethodno_stanje != 3) {
-						startXP += 4;
-						endXP +=4;
-						Prethodno_stanje = 4;
-					}
-
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
-					if(Prethodno_stanje != 4) {
-						startXP -= 4;
-						endXP -=4;
-						Prethodno_stanje = 3;
-					}
-
-
-				} else if ((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
-					if(Prethodno_stanje != 1) {
-						startYP -= 4;
-						endYP -=4;
-						Prethodno_stanje = 2;
-					}
-
-				}
 
 }
 
-} */
+PRAVAC movePlayer(int* proslo_stanje,int *trenutno_stanje) {
+
+	/*
+	 * RIGHT - 1
+	 * LEFT - 2
+	 * DOWN - 3
+	 * UP - 4
+	 */
+	int *t = trenutno_stanje;
+	int *p = proslo_stanje;
+
+
+	PRAVAC pravac;
+
+
+
+		if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & RIGHT) == 0) {
+				*t = 1;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & LEFT) == 0) {
+				*t = 2;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & DOWN) == 0) {
+				*t = 3;
+
+			} else if((Xil_In32(XPAR_MY_PERIPHERAL_0_BASEADDR) & UP) == 0) {
+				*t = 4;
+			}
+		if(*t == *p){
+			switch(*p) {
+			case 1:
+				return DESNO;
+			case 2:
+				return LEVO;
+			case 3:
+				return DOLE;
+			case 4:
+				return GORE;
+			}
+		} else{
+			if(*p != 2 && *t == 1) {
+						pravac = DESNO;
+						*p= 1;
+					} else if(*p != 1 && *t == 2) {
+						pravac = LEVO;
+						*p= 2;
+
+					} else if(*t == 3 && *p != 4) {
+						pravac = DOLE;
+						*p = 3;
+
+					} else if(*t == 4 && *p != 3) {
+						pravac = GORE;
+						*p = 4;
+					}
+
+
+		}
+		return pravac;
+}
+
+
 
