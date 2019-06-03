@@ -96,7 +96,8 @@ int main()
 
 
 	init_platform();
-	xil_printf("hello world\n\r");
+
+	srand(time(0));
 
 	VGA_PERIPH_MEM_mWriteMemory(
 			XPAR_VGA_PERIPH_MEM_0_S_AXI_MEM0_BASEADDR + 0x00, 0x0); // direct mode   0
@@ -305,6 +306,57 @@ void movePlayerAndBot()
 
 		BlankMap[columnB][rowB] = BOT;
 
+		switch(b){
+			case DOLE:
+				rowB++;
+				drawMap(48,0,columnB*8,rowB*8,8,8);
+				drawMap(72,0,columnB*8,(rowB-1)*8,8,8);
+				break;
+			case GORE:
+				rowB--;
+				drawMap(32,0,columnB*8,rowB*8,8,8);
+				drawMap(72,0,columnB*8,(rowB+1)*8,8,8);
+				break;
+			case LEVO:
+				columnB--;
+				drawMap(56,0,columnB*8,rowB*8,8,8);
+				drawMap(64,0,(columnB+1)*8,rowB*8,8,8);
+				break;
+			case DESNO:
+				columnB++;
+				drawMap(40,0,columnB*8,rowB*8,8,8);
+				drawMap(64,0,(columnB-1)*8,rowB*8,8,8);
+				break;
+				}
+
+		if(endGame(columnB,rowB) == 1)
+		{
+			drawMap(96,0,columnB*8,rowB*8,8,8);
+			printEndGameBlueWins();
+			break;
+		} else if (endGame(columnB,rowB) == 2) {
+			drawMap(96,0,(columnB+1)*8,rowB*8,8,8);
+			BlackClear(16,0,columnB*8,rowB*8,8,8);
+			printMargines();
+			printEndGameBlueWins();
+			break;
+		} else if (endGame(columnB,rowB) == 3) {
+			drawMap(96,0,columnB*8,(rowB+1)*8,8,8);
+			printEndGameBlueWins();
+			break;
+		} else if (endGame(columnB,rowB) == 4) {
+			drawMap(96,0,(columnB-1)*8,rowB*8,8,8);
+			BlackClear(16,0,columnB*8,rowB*8,8,8);
+			printMargines();
+			printEndGameBlueWins();
+			break;
+		} else if (endGame(columnB,rowB) == 5) {
+			drawMap(96,0,columnB*8,(rowB-1)*8,8,8);
+			printEndGameBlueWins();
+			break;
+		}
+
+		BlankMap[columnB][rowB] = BOT;
 
 		p = movePlayer(&proslo_stanje,&trenutno_stanje);
 		switch(p){
@@ -328,8 +380,8 @@ void movePlayerAndBot()
 				drawMap(8,0,columnP*8,rowP*8,8,8);
 				drawMap(80,0,(columnP-1)*8,rowP*8,8,8);
 				break;
+		}
 
-	}
 
 		if(endGame(columnP,rowP) == 1)
 			{
@@ -382,14 +434,6 @@ void movePlayerAndBot()
 
 
 
-
-	/*for(row = 0; row < 30; row++) {
-									for(column=0; column < 40; column++) {
-										xil_printf("%c",BlankMap[column][row] );
-									}
-									xil_printf("\n\r");
-							}*/
-
 }
 
 }
@@ -399,6 +443,7 @@ PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje)
 
 	int *p = proslo_stanje;
 	int random;
+	srand(time(0));
 
 	if(*p == 1){
 		random = rand()%3;
@@ -577,6 +622,7 @@ int endGame(int column, int row)
 PRAVAC botSurvivalMode(int* proslo_stanje)
 {
 	int random;
+	srand(time(0));
 	random = rand() % 2;
 	if(*proslo_stanje == 1 || *proslo_stanje == 2)
 	{
