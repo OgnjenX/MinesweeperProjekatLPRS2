@@ -67,23 +67,39 @@ int i, x, y, ii, oi, R, G, B, RGB, kolona, red, RGBgray,r,c;
 char BlankMap[40][30];
 
 typedef enum {
-		LEVO,
-		DESNO,
-		GORE,
-		DOLE
-	}PRAVAC;
+		LEVO1,
+		DESNO1,
+		GORE1,
+		DOLE1,
+		GORE_DESNO,
+		GORE_LEVO,
+		DOLE_DESNO,
+		DOLE_LEVO,
+		DESNO_GORE,
+		DESNO_DOLE,
+		LEVO_GORE,
+		LEVO_DOLE
+	}SPRAJT;
+
+	typedef enum {
+			LEVO,
+			DESNO,
+			GORE,
+			DOLE
+		}PRAVAC;
+
 
 PRAVAC movePlayer(int* proslo_stanje,int *trenutno_stanje);
-PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje );
+PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje,int *row,int *column, SPRAJT *sprajt);
 int endGame(int column, int row);
 void printMargines();
-PRAVAC botSurvivalMode();
 void printEndGameYellowWins();
 void printEndGameBlueWins();
 void makeTable(char table [40][30]);
 void movePlayerAndBot();
-PRAVAC botSurvivalMode(int* proslo_stanje);
+PRAVAC botSurvivalMode(int* proslo_stanje,int *row, int* column, SPRAJT* sprajt);
 void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height);
+int PlayerDetection(int column, int row);
 
 
 
@@ -91,9 +107,12 @@ void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height);
 int main()
 {
 
+
 	inc1 = 0;
 	inc2 = 0;
+	int brojac = 0;
 
+	while(brojac<10000000){brojac++;}
 
 	init_platform();
 
@@ -166,7 +185,6 @@ void printMargines()
 	}
 }
 
-//crtanje spritova
 void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height)
 {
 	int ox, oy, oi, iy, ix, ii;
@@ -177,13 +195,13 @@ void drawMap(int in_x, int in_y, int out_x, int out_y, int width, int height)
 			oi = oy * 320 + ox;
 			ix = in_x + x;
 			iy = in_y + y;
-			ii = iy * minesweeper_sprites.width + ix;
-			R = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel] >> 5;
-			G = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel + 1] >> 5;
-			B = minesweeper_sprites.pixel_data[ii
-					* minesweeper_sprites.bytes_per_pixel + 2] >> 5;
+			ii = iy * sprites.width + ix;
+			R = sprites.pixel_data[ii
+					* sprites.bytes_per_pixel] >> 5;
+			G = sprites.pixel_data[ii
+					* sprites.bytes_per_pixel + 1] >> 5;
+			B = sprites.pixel_data[ii
+					* sprites.bytes_per_pixel + 2] >> 5;
 			R <<= 6;
 			G <<= 3;
 			RGB = R | G | B;
@@ -228,6 +246,7 @@ void movePlayerAndBot()
 	int row,column;
 	PRAVAC p;
 	PRAVAC b;
+	SPRAJT sprajt;
 
 	makeTable(BlankMap);
 
@@ -236,46 +255,71 @@ void movePlayerAndBot()
 
 		while(j<1000000) {
 			if(j==1000){
-				b = moveBot(&proslo_stanje_b, &trenutno_stanje_b);
+				b = moveBot(&proslo_stanje_b, &trenutno_stanje_b,&rowB,&columnB,&sprajt);
 			}
 			j++;
 			}
 		j=0;
 
-		if(BlankMap[columnB+1][rowB] == PLAYER_TRACE || BlankMap[columnB][rowB+1] == PLAYER_TRACE)
-		{
-			b = botSurvivalMode(&proslo_stanje_b);
-		}
 
-		if(columnB > 38 || rowB > 28 || columnB < 1 || rowB < 1)
-		{
-			b = botSurvivalMode(&proslo_stanje_b);
-		}
-
-
+		b = botSurvivalMode(&proslo_stanje_b,&rowB,&columnB,&sprajt);
 
 		switch(b){
 			case DOLE:
 				rowB++;
 				drawMap(48,0,columnB*8,rowB*8,8,8);
-				drawMap(72,0,columnB*8,(rowB-1)*8,8,8);
-				break;
+				if(sprajt == DOLE1) {
+					drawMap(72,0,columnB*8,(rowB-1)*8,8,8);
+					break;
+				} else if(sprajt == DESNO_DOLE) {
+					drawMap(8,8,columnB*8,(rowB-1)*8,8,8);
+					break;
+				} else if(sprajt == LEVO_DOLE) {
+					drawMap(0,8,columnB*8,(rowB-1)*8,8,8);
+					break;
+				}
 			case GORE:
 				rowB--;
 				drawMap(32,0,columnB*8,rowB*8,8,8);
-				drawMap(72,0,columnB*8,(rowB+1)*8,8,8);
-				break;
+				if(sprajt == GORE1) {
+					drawMap(72,0,columnB*8,(rowB+1)*8,8,8);
+					break;
+				} else if(sprajt == DESNO_GORE) {
+					drawMap(16,8,columnB*8,(rowB+1)*8,8,8);
+					break;
+				} else if(sprajt == LEVO_GORE) {
+					drawMap(24,8,columnB*8,(rowB+1)*8,8,8);
+					break;
+				}
 			case LEVO:
 				columnB--;
 				drawMap(56,0,columnB*8,rowB*8,8,8);
-				drawMap(64,0,(columnB+1)*8,rowB*8,8,8);
-				break;
+				if(sprajt == LEVO1) {
+					drawMap(64,0,(columnB+1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == DOLE_LEVO) {
+					drawMap(16,8,(columnB+1)*8,rowB*8,8,8);
+					break;
+				} else if (sprajt == GORE_LEVO) {
+					drawMap(8,8,(columnB+1)*8,rowB*8,8,8);
+					break;
+				}
 			case DESNO:
 				columnB++;
 				drawMap(40,0,columnB*8,rowB*8,8,8);
-				drawMap(64,0,(columnB-1)*8,rowB*8,8,8);
-				break;
+				if(sprajt == DESNO1) {
+					drawMap(64,0,(columnB-1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == GORE_DESNO) {
+					drawMap(0,8,(columnB-1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == DOLE_DESNO) {
+					drawMap(24,8,(columnB-1)*8,rowB*8,8,8);
+					break;
 				}
+		}
+
+		BlankMap[columnB][rowB] = BOT;
 
 		if(endGame(columnB,rowB) == 1)
 		{
@@ -290,9 +334,10 @@ void movePlayerAndBot()
 			break;
 		} else if (endGame(columnB,rowB) == 3) {
 			drawMap(96,0,columnB*8,(rowB+1)*8,8,8);
+			printMargines();
 			printEndGameBlueWins();
 			break;
-		} else if (endGame(columnB,rowB) == 4) {
+		} else 	if (endGame(columnB,rowB) == 4) {
 			drawMap(96,0,(columnB-1)*8,rowB*8,8,8);
 			BlackClear(16,0,columnB*8,rowB*8,8,8);
 			printMargines();
@@ -300,38 +345,76 @@ void movePlayerAndBot()
 			break;
 		} else if (endGame(columnB,rowB) == 5) {
 			drawMap(96,0,columnB*8,(rowB-1)*8,8,8);
+			printMargines();
 			printEndGameBlueWins();
 			break;
 		}
 
-		BlankMap[columnB][rowB] = BOT;
+		b = moveBot(&proslo_stanje_b, &trenutno_stanje_b,&rowB,&columnB,&sprajt);
+
+		b = botSurvivalMode(&proslo_stanje_b,&rowB,&columnB,&sprajt);
 
 		switch(b){
 			case DOLE:
 				rowB++;
 				drawMap(48,0,columnB*8,rowB*8,8,8);
-				drawMap(72,0,columnB*8,(rowB-1)*8,8,8);
-				break;
+				if(sprajt == DOLE1) {
+					drawMap(72,0,columnB*8,(rowB-1)*8,8,8);
+					break;
+				} else if(sprajt == DESNO_DOLE) {
+					drawMap(8,8,columnB*8,(rowB-1)*8,8,8);
+					break;
+				} else if(sprajt == LEVO_DOLE) {
+					drawMap(0,8,columnB*8,(rowB-1)*8,8,8);
+					break;
+				}
 			case GORE:
 				rowB--;
 				drawMap(32,0,columnB*8,rowB*8,8,8);
-				drawMap(72,0,columnB*8,(rowB+1)*8,8,8);
-				break;
+				if(sprajt == GORE1) {
+					drawMap(72,0,columnB*8,(rowB+1)*8,8,8);
+					break;
+				} else if(sprajt == DESNO_GORE) {
+					drawMap(16,8,columnB*8,(rowB+1)*8,8,8);
+					break;
+				} else if(sprajt == LEVO_GORE) {
+					drawMap(24,8,columnB*8,(rowB+1)*8,8,8);
+					break;
+				}
 			case LEVO:
 				columnB--;
 				drawMap(56,0,columnB*8,rowB*8,8,8);
-				drawMap(64,0,(columnB+1)*8,rowB*8,8,8);
-				break;
+				if(sprajt == LEVO1) {
+					drawMap(64,0,(columnB+1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == DOLE_LEVO) {
+					drawMap(16,8,(columnB+1)*8,rowB*8,8,8);
+					break;
+				} else if (sprajt == GORE_LEVO) {
+					drawMap(8,8,(columnB+1)*8,rowB*8,8,8);
+					break;
+				}
 			case DESNO:
 				columnB++;
 				drawMap(40,0,columnB*8,rowB*8,8,8);
-				drawMap(64,0,(columnB-1)*8,rowB*8,8,8);
-				break;
+				if(sprajt == DESNO1) {
+					drawMap(64,0,(columnB-1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == GORE_DESNO) {
+					drawMap(0,8,(columnB-1)*8,rowB*8,8,8);
+					break;
+				} else if(sprajt == DOLE_DESNO) {
+					drawMap(24,8,(columnB-1)*8,rowB*8,8,8);
+					break;
 				}
+		}
+
+		BlankMap[columnB][rowB] = BOT;
 
 		if(endGame(columnB,rowB) == 1)
 		{
 			drawMap(96,0,columnB*8,rowB*8,8,8);
+			printMargines();
 			printEndGameBlueWins();
 			break;
 		} else if (endGame(columnB,rowB) == 2) {
@@ -342,9 +425,10 @@ void movePlayerAndBot()
 			break;
 		} else if (endGame(columnB,rowB) == 3) {
 			drawMap(96,0,columnB*8,(rowB+1)*8,8,8);
+			printMargines();
 			printEndGameBlueWins();
 			break;
-		} else if (endGame(columnB,rowB) == 4) {
+		} else 	if (endGame(columnB,rowB) == 4) {
 			drawMap(96,0,(columnB-1)*8,rowB*8,8,8);
 			BlackClear(16,0,columnB*8,rowB*8,8,8);
 			printMargines();
@@ -352,67 +436,113 @@ void movePlayerAndBot()
 			break;
 		} else if (endGame(columnB,rowB) == 5) {
 			drawMap(96,0,columnB*8,(rowB-1)*8,8,8);
+			printMargines();
 			printEndGameBlueWins();
 			break;
 		}
 
-		BlankMap[columnB][rowB] = BOT;
+
 
 		p = movePlayer(&proslo_stanje,&trenutno_stanje);
-		switch(p){
-			case DOLE:
-				rowP++;
-				drawMap(16,0,columnP*8,rowP*8,8,8);
-				drawMap(88,0,columnP*8,(rowP-1)*8,8,8);
-				break;
-			case GORE:
-				rowP--;
-				drawMap(0,0,columnP*8,rowP*8,8,8);
-				drawMap(88,0,columnP*8,(rowP+1)*8,8,8);
-				break;
-			case LEVO:
-				columnP--;
-				drawMap(24,0,columnP*8,rowP*8,8,8);
-				drawMap(80,0,(columnP+1)*8,rowP*8,8,8);
-				break;
-			case DESNO:
-				columnP++;
-				drawMap(8,0,columnP*8,rowP*8,8,8);
-				drawMap(80,0,(columnP-1)*8,rowP*8,8,8);
-				break;
-		}
+
+			switch(p){
+				case DOLE:
+					rowP++;
+					drawMap(16,0,columnP*8,rowP*8,8,8);
+					drawMap(88,0,columnP*8,(rowP-1)*8,8,8);
+					break;
+				case GORE:
+					rowP--;
+					drawMap(0,0,columnP*8,rowP*8,8,8);
+					drawMap(88,0,columnP*8,(rowP+1)*8,8,8);
+					break;
+				case LEVO:
+					columnP--;
+					drawMap(24,0,columnP*8,rowP*8,8,8);
+					drawMap(80,0,(columnP+1)*8,rowP*8,8,8);
+					break;
+				case DESNO:
+					columnP++;
+					drawMap(8,0,columnP*8,rowP*8,8,8);
+					drawMap(80,0,(columnP-1)*8,rowP*8,8,8);
+					break;
+				case DOLE_LEVO:
+					columnP--;
+					drawMap(24,0,columnP*8,rowP*8,8,8);
+					drawMap(48,8,(columnP+1)*8,rowP*8,8,8);
+					break;
+				case DOLE_DESNO:
+					columnP++;
+					drawMap(8,0,columnP*8,rowP*8,8,8);
+					drawMap(56,8,(columnP-1)*8,rowP*8,8,8);
+					break;
+				case GORE_LEVO:
+					columnP--;
+					drawMap(24,0,columnP*8,rowP*8,8,8);
+					drawMap(40,8,(columnP+1)*8,rowP*8,8,8);
+					break;
+				case GORE_DESNO:
+					columnP++;
+					drawMap(8,0,columnP*8,rowP*8,8,8);
+					drawMap(32,8,(columnP-1)*8,rowP*8,8,8);
+					break;
+				case LEVO_GORE:
+					rowP--;
+					drawMap(0,0,columnP*8,rowP*8,8,8);
+					drawMap(56,8,columnP*8,(rowP+1)*8,8,8);
+					break;
+				case LEVO_DOLE:
+					rowP++;
+					drawMap(16,0,columnP*8,rowP*8,8,8);
+					drawMap(32,8,columnP*8,(rowP-1)*8,8,8);
+					break;
+				case DESNO_DOLE:
+					rowP++;
+					drawMap(16,0,columnP*8,rowP*8,8,8);
+					drawMap(40,8,columnP*8,(rowP-1)*8,8,8);
+					break;
+				case DESNO_GORE:
+					rowP--;
+					drawMap(0,0,columnP*8,rowP*8,8,8);
+					drawMap(48,8,columnP*8,(rowP+1)*8,8,8);
+					break;
+					}
 
 
 		if(endGame(columnP,rowP) == 1)
 			{
 				drawMap(96,0,columnP*8,rowP*8,8,8);
+				printMargines();
 				printEndGameYellowWins();
 				break;
 
 			} else if (endGame(columnP,rowP) == 2) {
 				drawMap(96,0,(columnP+1)*8,rowP*8,8,8);
-				//BlackClear(16,0,columnP*8,rowP*8,8,8);
+				BlackClear(16,0,columnP*8,rowP*8,8,8);
 				printMargines();
 				printEndGameYellowWins();
 				break;
 			} else if (endGame(columnP,rowP) == 3) {
 				drawMap(96,0,columnP*8,(rowP+1)*8,8,8);
+				printMargines();
 				printEndGameYellowWins();
 				break;
 			} else if (endGame(columnP,rowP) == 4) {
 				drawMap(96,0,(columnP-1)*8,rowP*8,8,8);
-				//BlackClear(16,0,columnP*8,rowP*8,8,8);
+				BlackClear(16,0,columnP*8,rowP*8,8,8);
 				printMargines();
 				printEndGameYellowWins();
 				break;
 			} else if (endGame(columnP,rowP) == 5) {
 				drawMap(96,0,columnP*8,(rowP-1)*8,8,8);
+				printMargines();
 				printEndGameYellowWins();
+
 				break;
 			}
 
+		BlankMap[columnP][rowP] = PLAYER;
 
-	BlankMap[columnP][rowP] = PLAYER;
 
 
 
@@ -432,91 +562,102 @@ void movePlayerAndBot()
 	}
 
 
-
-
-}
+	printMargines();
 
 }
 
-PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje)
+}
+
+PRAVAC moveBot(int* proslo_stanje,int *trenutno_stanje,int *row,int *column, SPRAJT *sprajt)
 {
-
 	int *p = proslo_stanje;
 	int random;
 	srand(time(0));
 
-	if(*p == 1){
-		random = rand()%3;
-		if(random == 0)
-		{
-			*p = 1;
-			return DESNO;
-		}
-		else if(random == 1)
-		{
-			*p = 3;
-			return DOLE;
-		}
-		else if(random == 2)
-		{
-			*p = 4;
-			return GORE;
-		}
-	}
-	else if(*p == 2){
-		random = rand()%3;
-		if(random == 0)
-		{
-			*p = 2;
-			return LEVO;
-		}
-		else if(random == 1)
-		{
-			*p = 3;
-			return DOLE;
-		}
-		else if(random == 2)
-		{
-			*p = 4;
-			return GORE;
-		}
-	}
-	else if(*p == 3){
-		random = rand()%3;
-		if(random == 0)
-		{
-			*p = 3;
-			return DOLE;
-		}
-		else if(random == 1)
-		{
-			*p = 2;
-			return LEVO;
-		}
-		else if(random == 2)
-		{
-			*p = 1;
-			return DESNO;
-		}
-	}
-	else if(*p == 4){
+		if(*p == 1){
 			random = rand()%3;
 			if(random == 0)
 			{
+				*p = 1;
+				*sprajt = DESNO1;
+				return DESNO;
+			}
+			else if(random == 1)
+			{
+				*p = 3;
+				*sprajt = DESNO_DOLE;
+				return DOLE;
+			}
+			else if(random == 2)
+			{
 				*p = 4;
+				*sprajt = DESNO_GORE;
 				return GORE;
+			}
+		}
+		else if(*p == 2){
+			random = rand()%3;
+			if(random == 0)
+			{
+				*p = 2;
+				*sprajt = LEVO1;
+				return LEVO;
+			}
+			else if(random == 1)
+			{
+				*p = 3;
+				*sprajt = LEVO_DOLE;
+				return DOLE;
+			}
+			else if(random == 2)
+			{
+				*p = 4;
+				*sprajt = LEVO_GORE;
+				return GORE;
+			}
+		}
+		else if(*p == 3){
+			random = rand()%3;
+			if(random == 0)
+			{
+				*p = 3;
+				*sprajt = DOLE1;
+				return DOLE;
 			}
 			else if(random == 1)
 			{
 				*p = 2;
+				*sprajt = DOLE_LEVO;
 				return LEVO;
 			}
 			else if(random == 2)
 			{
 				*p = 1;
+				*sprajt = DOLE_DESNO;
 				return DESNO;
 			}
 		}
+		else if(*p == 4){
+				random = rand()%3;
+				if(random == 0)
+				{
+					*p = 4;
+					*sprajt = GORE1;
+					return GORE;
+				}
+				else if(random == 1)
+				{
+					*p = 2;
+					*sprajt = GORE_LEVO;
+					return LEVO;
+				}
+				else if(random == 2)
+				{
+					*p = 1;
+					*sprajt = GORE_DESNO;
+					return DESNO;
+				}
+	}
 }
 
 PRAVAC movePlayer(int* proslo_stanje,int *trenutno_stanje)
@@ -560,18 +701,34 @@ PRAVAC movePlayer(int* proslo_stanje,int *trenutno_stanje)
 			}
 		} else{
 			if(*p != 2 && *t == 1) {
-						pravac = DESNO;
-						*p= 1;
-					} else if(*p != 1 && *t == 2) {
-						pravac = LEVO;
+				if(*p == 3) {
+					pravac = DOLE_DESNO;
+					} else {
+					pravac = GORE_DESNO;
+					}
+					*p= 1;
+				} else if(*p != 1 && *t == 2) {
+					if(*p == 3) {
+						pravac = DOLE_LEVO;
+						} else {
+						pravac = GORE_LEVO;
+						}
 						*p= 2;
 
 					} else if(*t == 3 && *p != 4) {
-						pravac = DOLE;
+						if(*p == 1) {
+							pravac = DESNO_DOLE;
+							} else {
+							pravac = LEVO_DOLE;
+							}
 						*p = 3;
 
 					} else if(*t == 4 && *p != 3) {
-						pravac = GORE;
+						if(*p == 1) {
+							pravac = DESNO_GORE;
+							} else {
+							pravac = LEVO_GORE;
+							}
 						*p = 4;
 					}
 			if(*p == 2 && *t == 1)
@@ -619,29 +776,78 @@ int endGame(int column, int row)
 
 }
 
-PRAVAC botSurvivalMode(int* proslo_stanje)
+
+PRAVAC botSurvivalMode(int* proslo_stanje,int *row, int* column,SPRAJT *sprajt)
 {
-	int random;
-	srand(time(0));
-	random = rand() % 2;
-	if(*proslo_stanje == 1 || *proslo_stanje == 2)
-	{
-		if(random == 0)
-		{
-			return GORE;
-		}else{
-			return DOLE;
-		}
-	}
-	if(*proslo_stanje == 3 || *proslo_stanje == 2)
-	{
-		if(random == 0)
-		{
-			return LEVO;
-		}else{
+	PRAVAC p;
+
+	if(*proslo_stanje == 1){
+		if(BlankMap[*column+1][*row] == PLAYER || BlankMap[*column+1][*row] == PLAYER_TRACE || BlankMap[*column+1][*row] == BOTS_TRACE || *column+1 == 40 ) {
+			if(BlankMap[*column][*row+1] == BLANK) {
+				*sprajt = DESNO_DOLE;
+				*proslo_stanje = 3;
+				return DOLE;
+			} else {
+				*sprajt = DESNO_GORE;
+				*proslo_stanje = 4;
+				return GORE;
+			}
+		} else {
+			*sprajt = DESNO1;
 			return DESNO;
 		}
 	}
+	if(*proslo_stanje == 2){
+		if(BlankMap[*column-1][*row] == PLAYER || BlankMap[*column-1][*row] == PLAYER_TRACE || BlankMap[*column-1][*row] == BOTS_TRACE || *column==0 ) {
+			if(BlankMap[*column][*row+1] == BLANK) {
+				*sprajt = LEVO_DOLE;
+				*proslo_stanje = 3;
+				return DOLE;
+			} else {
+				*sprajt = LEVO_GORE;
+				*proslo_stanje = 4;
+				return GORE;
+			}
+		} else {
+			*sprajt = LEVO1;
+			return LEVO;
+		}
+	}
+	if(*proslo_stanje == 3){
+		if(BlankMap[*column][*row+1] == PLAYER || BlankMap[*column][*row+1] == PLAYER_TRACE || BlankMap[*column][*row+1] == BOTS_TRACE || *row+1==30) {
+			if(BlankMap[*column+1][*row] == BLANK) {
+				*sprajt = DOLE_DESNO;
+				*proslo_stanje = 1;
+				return DESNO;
+			} else {
+				*sprajt = DOLE_LEVO;
+				*proslo_stanje = 2;
+				return LEVO;
+			}
+		} else {
+			*sprajt = DOLE1;
+			return DOLE;
+		}
+	}
+	if(*proslo_stanje == 4){
+		if(BlankMap[*column][*row-1] == PLAYER || BlankMap[*column][*row-1] == PLAYER_TRACE || BlankMap[*column][*row-1] == BOTS_TRACE || *row==0) {
+			if(BlankMap[*column+1][*row] == BLANK) {
+				*sprajt = GORE_DESNO;
+				*proslo_stanje = 1;
+				return DESNO;
+			} else {
+				*sprajt = GORE_LEVO;
+				*proslo_stanje = 2;
+				return LEVO;
+			}
+		} else {
+			*sprajt = GORE1;
+			return GORE;
+		}
+	}
+
+
+
 }
 
 void printEndGameBlueWins()
