@@ -779,7 +779,6 @@ int endGame(int column, int row)
 
 PRAVAC botSurvivalMode(int* proslo_stanje,int *row, int* column,SPRAJT *sprajt)
 {
-	PRAVAC p;
 
 	if(*proslo_stanje == 1){
 		if(BlankMap[*column+1][*row] == PLAYER || BlankMap[*column+1][*row] == PLAYER_TRACE || BlankMap[*column+1][*row] == BOTS_TRACE || *column+1 == 40 ) {
